@@ -15,6 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.schemas import ChatRequest, ChaResponse, HealthResponse
 from config import settings
 
+from langchain_core.messages import HumanMessage
+from agents.graph import agent
+
 app = FastAPI(
     title="FinSight Agent",
     description="Agentic AI system for finacial research",
@@ -58,9 +61,21 @@ def health_check():
 
 @app.post("/chat", response_model=ChaResponse)
 def chat(request: ChatRequest, token: str = Depends(verify_token)):
-    #TODO: Agent logic
+    #Main agent endpoint
+    initial_state = {
+        "question": request.question,
+        "messages": [HumanMessage(content=request.question)],
+        "retrieved_docs": [],
+        "web_results": [],
+        "sources": [],
+        "final_answer": "",
+        "next_action": "",
+    }
+
+    result = agent.invoke(initial_state)
+
     return ChaResponse(
-        answer=f"Agent not yet wired. You asked: {request.question}",
+        answer=result["final_answer"],
         session_id=request.session_id,
-        sources=[],
+        sources=result.get("sources", []),
     )
