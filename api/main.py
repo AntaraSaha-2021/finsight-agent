@@ -8,7 +8,7 @@ Endpoints:
     POST    /upload: PDF upload enpoint, auth required
 """
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,6 +17,9 @@ from config import settings
 
 from langchain_core.messages import HumanMessage
 from agents.graph import agent
+
+import shutil
+from pathlib import Path
 
 app = FastAPI(
     title="FinSight Agent",
@@ -51,12 +54,16 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 #####################Routes################
 @app.get("/health", response_model=HealthResponse)
 def health_check():
+    from tools.rag_tool import get_index_status
+    index_status = get_index_status()
+
     return HealthResponse(
         status="Ok",
         llm_provider=settings.LLM_PROVIDER,
         model=(
             settings.GROQ_MODEL if settings.LLM_PROVIDER == "groq" else settings.OLLAMA_MODEL
         ),
+        index_ready = index_status["index_exists"],
     )
 
 @app.post("/chat", response_model=ChaResponse)
@@ -79,3 +86,42 @@ def chat(request: ChatRequest, token: str = Depends(verify_token)):
         session_id=request.session_id,
         sources=result.get("sources", []),
     )
+
+@app.post("/upload")
+def upload_pdf(file: UploadFile=File(...), token: str=Depends(verify_token)):
+    from tools.rag_tool import ingest_pdf
+
+    safe_filename = Path(file.filename).name
+    if not safe_filename.endswith(".pdf"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are accepted"
+        )
+    
+    data_dir = Path(settings.DATA_DIR)
+    data_dir.mkdir(exist_ok=True)
+    save_path = data_dir / safe_filename
+
+    try:
+        with save_path.open("wb") as f:
+            shutil.copyfileobj(file.file, f)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save file: {str(e)}"
+        )
+    
+    result = ingest_pdf(str(save_path))
+
+    if not result["success"]:
+        raise HTTPException(
+            status_code=422,
+            detail=result["error"]
+        )
+    
+    return {
+        "message": "PDF ingested successfully",
+        "filename": safe_filename,
+        "pages": result["pages"],
+        "chunks": result["chunks"],
+    }

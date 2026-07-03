@@ -22,11 +22,11 @@
 *(full instructions coming soon)*
 
 ## Features
-- [ ] Multi-tool agentic reasoning
-- [ ] Financial PDF ingestion + RAG retrieval  
+- [x] Multi-tool agentic reasoning
+- [x] Financial PDF ingestion + RAG retrieval  
 - [ ] Live web search integration
 - [ ] Conversation memory
-- [ ] REST API with authentication
+- [x] REST API with authentication
 - [ ] Single-page chat frontend
 
 ---

@@ -58,3 +58,4 @@ class HealthResponse(BaseModel):
     status: str
     llm_provider: str
     model: str
+    index_ready: bool = False

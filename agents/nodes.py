@@ -54,12 +54,23 @@ def supervisor_node(state: AgentState) -> dict:
     }
 
 def rag_node(state: AgentState) -> dict:
-    #TODO: Currently a placeholder. Full implementation later
+    from tools.rag_tool import retrieve
+
+    query = state["question"]
+    retrieved = retrieve(query)
+
+    if not retrieved:
+        return {
+            "retrieved_docs": [],
+            "next_action": "web_search",
+            "messages": [AIMessage(content="[RAG] No documents in index. Routing to web search.")]
+        }
+    
     return {
-        "retrieved_docs": ["[RAG tool not yet implemented, coming soon]"],
+        "retrieved_docs": retrieved,
         "sources": ["document"],
         "next_action": "answer",
-        "messages": [AIMessage(content="[RAG] Retrieved documents placeholder.")]
+        "messages": [AIMessage(content=f"[RAG] Retrieved {len(retrieved)} relevant chunks.")]
     }
 
 def web_node(state: AgentState) -> dict:

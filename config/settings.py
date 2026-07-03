@@ -30,5 +30,6 @@ TOP_K_RETRIEVAL = int(os.getenv("TOP_K_RETRIEVAL"))
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 VECTORSTORE_DIR = os.path.join(BASE_DIR, "vectorstore")
+print(f"vectorstore path: {VECTORSTORE_DIR}")
 
 API_SECRET_KEY = os.getenv("API_SECRET_KEY")
