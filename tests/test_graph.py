@@ -67,3 +67,29 @@ def test_answer_node_handles_empty_context():
 
     result = answer_node(state)
     assert result["final_answer"] != ""
+
+def test_react_loop_does_not_exceed_max_iterations():
+    from agents.graph import MAX_ITERATIONS
+    from agents.nodes import supervisor_node
+    from langchain_core.messages import AIMessage
+
+    fake_supervisor_messages = [
+        AIMessage(content="[Supervisor] Decision: rag")
+        for _ in range(MAX_ITERATIONS)
+    ]
+
+    from agents.graph import route_after_supervisor
+    from agents.state import AgentState
+
+    state = AgentState(
+        question="test",
+        messages=fake_supervisor_messages,
+        next_action="rag",
+        retrieved_docs=[],
+        web_results=[],
+        final_answer="",
+        sources=[],
+    )
+
+    result = route_after_supervisor(state)
+    assert result=="answer"

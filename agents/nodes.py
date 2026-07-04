@@ -14,23 +14,44 @@ Rules you always follow:
 - If you are uncertain, say so explicitly
 - Never fabricate financial figures, date, or company data
 - Always cite your sources
-
-You have access to two tools:
-1. rag_tool: searches uploaded financial documents (annual reports, filings)
-2. web_search: searches the web for lastest news and information
 """
 
 def supervisor_node(state: AgentState) -> dict:
     llm = get_llm()
 
-    decision_prompt = f"""Given this financial research question, decide which tool to use first.
+    has_docs=bool(state.get("retrieved_docs"))
+    has_web=bool(state.get("web_results"))
+    previous_action=state.get("next_action", "none")
+
+    context_summary =[]
+
+    if has_docs:
+        context_summary.append(
+            f"RAG retrieval: found {len(state['retrieved_docs'])} document chunks"
+        )
+    if has_web:
+        context_summary.append(
+            f"Web Search: found {len(state['web_results'])} results"
+        )
+    if not context_summary:
+        context_summary.append("No tools have been used yet.")
+
+    decision_prompt = f"""You are managing a financial research task.
     
     Question: {state['question']}
 
-    Available tools:
-    - rag: Use when question asks about uploaded documents, annual reports, specific filings, or document-based financial data
-    - web_search: Use when question asks about recent news, current prices, latest developments, or information not in documents
-    - answer: Use ONLY when you already have enough context to answer well
+    Current context gathere:
+    {chr(10).join(context_summary)}
+
+    Previous action: {previous_action}
+
+    Decide what to do next. Rules:
+    - If no tools used yet: choose the most appropriate tool
+    - If RAG was used but returned nothing: try web_search
+    - If web_search was used but returned nothing: go to answer and explain limitation
+    - If sufficient context exists from either tool: go to answer
+    - Do not repeat a tool that already ran successfully
+    - Never run the same tool twice
 
     Respond with exactly one word: rag, web_search, or answer    
     """
@@ -46,7 +67,8 @@ def supervisor_node(state: AgentState) -> dict:
 
     #Guard: if LLM returns something unexpected, default to web_search
     if decision not in ["rag", "web_search", "answer"]:
-        decision = "web_search"
+        print(f"[Supervisor] Unexpected decision '{decision}' - defaulting to answer")
+        decision = "answer"
 
     return {
         "next_action": decision,
@@ -59,27 +81,38 @@ def rag_node(state: AgentState) -> dict:
     query = state["question"]
     retrieved = retrieve(query)
 
-    if not retrieved:
-        return {
-            "retrieved_docs": [],
-            "next_action": "web_search",
-            "messages": [AIMessage(content="[RAG] No documents in index. Routing to web search.")]
-        }
+    existing = state.get("sources", [])
+    new_sources = ["document"] if retrieved and "document" not in existing else []
+
+
+    # if not retrieved:
+    #     return {
+    #         "retrieved_docs": [],
+    #         "next_action": "web_search",
+    #         "messages": [AIMessage(content="[RAG] No documents in index. Routing to web search.")]
+    #     }
     
     return {
         "retrieved_docs": retrieved,
-        "sources": ["document"],
-        "next_action": "answer",
-        "messages": [AIMessage(content=f"[RAG] Retrieved {len(retrieved)} relevant chunks.")]
+        "sources": existing + new_sources,
+        # "next_action": "answer",
+        "messages": [AIMessage(content=f"[RAG] Retrieved {len(retrieved)} relevant chunks." if retrieved else "[RAG] No documents found in index.")]
     }
 
 def web_node(state: AgentState) -> dict:
-    #TODO: Currently a placeholder. Full implementation later
+    from tools.web_search_tool import search
+
+    query = state['question']
+    results = search(query)
+
+    existing = state.get("sources", [])
+    new_sources = ["web"] if results and "web" not in existing else []
+
     return {
-        "web_results": ["[Web search not yet implemented, coming soon]"],
-        "sources": ["web"],
-        "next_action": "answer",
-        "message": [AIMessage(content="[Web] Search results placeholder.")]
+        "web_results": results,
+        "sources": existing + new_sources,
+        # "next_action": "answer",
+        "message": f"[WebSearch] found {len(results)} results." if results else "[WebSearch] No results found."
     }
 
 def answer_node(state: AgentState) -> dict:
@@ -106,9 +139,10 @@ def answer_node(state: AgentState) -> dict:
     {context}
 
     Instructions:
-    - Answer based on the context provided
-    - If context is insufficient, say what information is missing
+    - Answer based strictly on the context provided
+    - If context is insufficient, clearly say what information is missing
     - Be concise but complete
+    - Never fabricate financial figures or dates
     - Cite which source (document or web) each fact comes from"""
 
     messages = [

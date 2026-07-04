@@ -2,7 +2,18 @@ from langgraph.graph import StateGraph, START, END
 from agents.state import AgentState
 from agents.nodes import supervisor_node, rag_node, web_node, answer_node
 
+MAX_ITERATIONS = 4
+
 def route_after_supervisor(state: AgentState) -> str:
+    supervisor_calls = sum(
+        1 for msg in state.get("messages", [])
+        if "[Supervisor]" in str(msg.content)
+    )
+
+    if supervisor_calls>=MAX_ITERATIONS:
+        print(f"[Graph] Max iterations ({MAX_ITERATIONS}) reached - forcing answer")
+        return "answer"
+    
     return state["next_action"]
 
 def build_graph():
@@ -27,8 +38,8 @@ def build_graph():
         }
     )
 
-    graph.add_edge("rag", "answer")
-    graph.add_edge("web_search", "answer")
+    graph.add_edge("rag", "supervisor")
+    graph.add_edge("web_search", "supervisor")
 
     graph.add_edge("answer", END)
 

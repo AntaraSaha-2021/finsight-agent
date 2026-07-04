@@ -24,7 +24,7 @@
 ## Features
 - [x] Multi-tool agentic reasoning
 - [x] Financial PDF ingestion + RAG retrieval  
-- [ ] Live web search integration
+- [x] Live web search integration
 - [ ] Conversation memory
 - [x] REST API with authentication
 - [ ] Single-page chat frontend
