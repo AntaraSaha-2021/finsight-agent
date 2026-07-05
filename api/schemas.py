@@ -59,3 +59,4 @@ class HealthResponse(BaseModel):
     llm_provider: str
     model: str
     index_ready: bool = False
+    active_sessions: int=0

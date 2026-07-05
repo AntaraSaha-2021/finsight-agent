@@ -29,3 +29,7 @@ class AgentState(TypedDict):
 
     #Source attribution: what was used to answer
     sources: list[str]
+
+    session_id: str
+
+    conversation_history: str

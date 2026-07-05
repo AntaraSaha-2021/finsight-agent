@@ -35,10 +35,15 @@ def supervisor_node(state: AgentState) -> dict:
         )
     if not context_summary:
         context_summary.append("No tools have been used yet.")
+    
+    #Add conversation history context to supervisor decision
+    history = state.get("conversation_history", "")
+    history_context = f"\nConversation so far:\n{history}" if history else ""
 
     decision_prompt = f"""You are managing a financial research task.
     
     Question: {state['question']}
+    {history_context}
 
     Current context gathere:
     {chr(10).join(context_summary)}
@@ -131,15 +136,20 @@ def answer_node(state: AgentState) -> dict:
 
     context = "\n\n".join(context_parts) if context_parts else "No context gathered."
 
+    history = state.get("conversation_history","")
+    history_context = f"\nPrevious conversation:\n{history}\n" if history else ""
+
     answer_prompt = f"""Using the context below, answer the user's question.
     
     Question: {state['question']}
+    {history_context}
     
     Context:
     {context}
 
     Instructions:
-    - Answer based strictly on the context provided
+    - If the question refers to something from previous conversation, use that context
+    - Answer based strictly on retrieved context and conversation histroy
     - If context is insufficient, clearly say what information is missing
     - Be concise but complete
     - Never fabricate financial figures or dates

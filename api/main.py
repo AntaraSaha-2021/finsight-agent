@@ -55,6 +55,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
     from tools.rag_tool import get_index_status
+    from memory.session_memory import get_session_count
+
     index_status = get_index_status()
 
     return HealthResponse(
@@ -64,11 +66,16 @@ def health_check():
             settings.GROQ_MODEL if settings.LLM_PROVIDER == "groq" else settings.OLLAMA_MODEL
         ),
         index_ready = index_status["index_exists"],
+        active_sessions=get_session_count(),
     )
 
 @app.post("/chat", response_model=ChaResponse)
 def chat(request: ChatRequest, token: str = Depends(verify_token)):
     #Main agent endpoint
+    from memory.session_memory import (format_history_for_prompt, add_turn)
+
+    history = format_history_for_prompt(request.session_id)
+
     initial_state = {
         "question": request.question,
         "messages": [HumanMessage(content=request.question)],
@@ -77,14 +84,21 @@ def chat(request: ChatRequest, token: str = Depends(verify_token)):
         "sources": [],
         "final_answer": "",
         "next_action": "",
+        "session_id": request.session_id,
+        "conversation_history": history,
     }
 
     result = agent.invoke(initial_state)
 
+    #Store this turn in memory for next call
+    add_turn(session_id=request.session_id,
+             question=request.question,
+             answer=result["final_answer"])
+
     return ChaResponse(
         answer=result["final_answer"],
         session_id=request.session_id,
-        sources=result.get("sources", []),
+        sources=list(set(result.get("sources", []))),
     )
 
 @app.post("/upload")
@@ -125,3 +139,10 @@ def upload_pdf(file: UploadFile=File(...), token: str=Depends(verify_token)):
         "pages": result["pages"],
         "chunks": result["chunks"],
     }
+
+@app.delete("/session/{session_id}")
+def clear_session(session_id: str, token: str = Depends(verify_token)):
+    #Useful for starting fresh without restarting server
+    from memory.session_memory import clear_session as _clear
+    _clear(session_id)
+    return {"message": f"Session {session_id} cleared"}
