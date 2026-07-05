@@ -27,7 +27,7 @@
 - [x] Live web search integration
 - [x] Conversation memory
 - [x] REST API with authentication
-- [ ] Single-page chat frontend
+- [x] Single-page chat frontend
 
 ---
 *Built as a portfolio project demonstrating enterprise-grade agentic AI patterns.*

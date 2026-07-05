@@ -33,3 +33,5 @@ VECTORSTORE_DIR = os.path.join(BASE_DIR, "vectorstore")
 print(f"vectorstore path: {VECTORSTORE_DIR}")
 
 API_SECRET_KEY = os.getenv("API_SECRET_KEY")
+
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5500,http://localhost:8000,http://127.0.0.1:5500").split(",")

@@ -51,3 +51,15 @@ def test_chat_rejects_prompt_injection():
         headers={"Authorization": f"Bearer {settings.API_SECRET_KEY}"}
     )
     assert response.status_code==422
+
+def test_cors_headers_present_on_health():
+    response = client.get(
+        "/health",
+        headers={"Origin": "http://localhost:5500"}
+    )
+    assert response.status_code==200
+    assert "access-control-allow-origin" in response.headers
+
+def test_cors_does_not_allow_wildcard():
+    from config import settings
+    assert "*" not in settings.ALLOWED_ORIGINS

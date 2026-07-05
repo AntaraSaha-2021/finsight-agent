@@ -31,9 +31,12 @@ app = FastAPI(
 #CORS - allows the HTML frontend to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],    #TODO: tighten this before production
-    allow_methods=["GET","POST"],
-    allow_headers=["*"],
+    # allow_origins=["*"],    
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_methods=["GET","POST","DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+    # allow_headers=["*"],
+    allow_credentials=False,
 )
 
 ################Authentication#########
