@@ -6,13 +6,14 @@ Endpoints:
     GET     /health: liveness check, no auth required
     POST    /chat:   main agent endpoint, auth required
     POST    /upload: PDF upload enpoint, auth required
+    DELETE  /session/session_id: clears the active sessions
 """
 
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.schemas import ChatRequest, ChaResponse, HealthResponse
+from api.schemas import ChatRequest, ChatResponse, HealthResponse
 from config import settings
 
 from langchain_core.messages import HumanMessage
@@ -23,7 +24,7 @@ from pathlib import Path
 
 app = FastAPI(
     title="FinSight Agent",
-    description="Agentic AI system for finacial research",
+    description="Agentic AI system for financial research",
     version="0.1.0",
     #TODO: Disable docs in prod (for security)
 )
@@ -63,7 +64,7 @@ def health_check():
     index_status = get_index_status()
 
     return HealthResponse(
-        status="Ok",
+        status="OK",
         llm_provider=settings.LLM_PROVIDER,
         model=(
             settings.GROQ_MODEL if settings.LLM_PROVIDER == "groq" else settings.OLLAMA_MODEL
@@ -72,7 +73,7 @@ def health_check():
         active_sessions=get_session_count(),
     )
 
-@app.post("/chat", response_model=ChaResponse)
+@app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest, token: str = Depends(verify_token)):
     #Main agent endpoint
     from memory.session_memory import (format_history_for_prompt, add_turn)
@@ -98,7 +99,7 @@ def chat(request: ChatRequest, token: str = Depends(verify_token)):
              question=request.question,
              answer=result["final_answer"])
 
-    return ChaResponse(
+    return ChatResponse(
         answer=result["final_answer"],
         session_id=request.session_id,
         sources=list(set(result.get("sources", []))),

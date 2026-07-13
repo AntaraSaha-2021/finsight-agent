@@ -1,6 +1,5 @@
 import time
 from ddgs import DDGS
-from config import settings
 
 MAX_QUERY_LENGTH=200
 MAX_RESULTS=5

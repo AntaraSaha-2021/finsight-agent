@@ -117,7 +117,7 @@ def web_node(state: AgentState) -> dict:
         "web_results": results,
         "sources": existing + new_sources,
         # "next_action": "answer",
-        "message": f"[WebSearch] found {len(results)} results." if results else "[WebSearch] No results found."
+        "messages": f"[WebSearch] found {len(results)} results." if results else "[WebSearch] No results found."
     }
 
 def answer_node(state: AgentState) -> dict:

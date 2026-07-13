@@ -35,10 +35,10 @@ class ChatRequest(BaseModel):
         injection_patterns = [
             r"ignore previous instructions",
             r"ignore all instructions",
-            r"disregard your"
-            r"you are now"
-            r"act as"
-            r"jailbreak"
+            r"disregard your",
+            r"you are now",
+            r"act as",
+            r"jailbreak",
         ]
         lowered = v.lower()
         for pattern in injection_patterns:
@@ -49,10 +49,10 @@ class ChatRequest(BaseModel):
         return v.strip()
     
 
-class ChaResponse(BaseModel):
+class ChatResponse(BaseModel):
     answer: str
     session_id: str
-    sources: list[str] = []
+    sources: list[str] = Field(default_factory=list)
 
 class HealthResponse(BaseModel):
     status: str

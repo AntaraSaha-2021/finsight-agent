@@ -447,7 +447,7 @@
                placeholder="session-id"
                value="session-001" />
         <button class="btn-secondary" onclick="clearSession()">
-          🗑 Clear Session Memory
+          🗨️ Start Fresh
         </button>
       </div>
     </div>
@@ -684,10 +684,26 @@
         method:  "DELETE",
         headers: { "Authorization": `Bearer ${token}` },
       });
-      appendMessage("agent", `Session "${sessionId}" memory cleared.`, []);
+      // appendMessage("agent", `Session "${sessionId}" memory cleared.`, []);
+      resetChatUI();
     } catch {
       showError("Failed to clear session.");
     }
+  }
+
+  // ── Reset Chat UI ───────────────────────────────────────────────────
+  function resetChatUI() {
+    const container = document.getElementById("messages");
+
+    container.innerHTML = `
+        <div class="empty-state" id="emptyState">
+            <h2>Financial Research Assistant</h2>
+            <p>
+                Upload a financial document and ask questions,
+                or search for live market information.
+            </p>
+        </div>
+    `;
   }
 
   // ── UI Helpers ───────────────────────────────────────────────────
