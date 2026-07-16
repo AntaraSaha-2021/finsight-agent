@@ -150,3 +150,25 @@ def clear_session(session_id: str, token: str = Depends(verify_token)):
     from memory.session_memory import clear_session as _clear
     _clear(session_id)
     return {"message": f"Session {session_id} cleared"}
+
+@app.delete("/index")
+def reset_index(token: str = Depends(verify_token)):
+    """
+    Clears the FAISS vector index.
+    Use when you want to start fresh with new documents.
+    """
+    import shutil
+    from pathlib import Path
+
+    vectorstore_path = Path(settings.VECTORSTORE_DIR)
+
+    try:
+        if vectorstore_path.exists():
+            shutil.rmtree(vectorstore_path)
+            vectorstore_path.mkdir()
+            return {"message": "Index cleared successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to clear index: {str(e)}"
+        )

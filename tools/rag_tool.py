@@ -93,6 +93,11 @@ def ingest_pdf(file_path: str) -> dict:
     except Exception as e:
         return {"success": False, "error": f"Indexing failed: {str(e)}"}
 
+    try:
+        Path(file_path).unlink()
+    except Exception as e:
+        print(f"[RAG] Warning: could not delete PDF after ingestion: {e}")
+
     return {
         "success": True,
         "pages": len(pages),

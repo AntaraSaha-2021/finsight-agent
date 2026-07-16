@@ -14,7 +14,7 @@ client = TestClient(app)
 def test_health_check_returns_ok():
     response = client.get("/health")
     assert response.status_code==200
-    assert response.json()["status"]=="Ok"
+    assert response.json()["status"]=="OK"
 
 def test_health_check_returns_correct_provider():
     response=client.get("/health")

@@ -452,6 +452,10 @@
       </div>
     </div>
 
+    <button class="btn-secondary" onclick="resetIndex()" style="margin-top: 8px; border-color: #fc8181; color: #fc8181;">
+      🗑️ Reset Document Index
+    </button>
+
     <div>
       <h3>Try These Questions</h3>
       <div class="suggestions">
@@ -704,6 +708,27 @@
             </p>
         </div>
     `;
+  }
+
+  async function resetIndex() {
+    if (!confirm("This will delete all indexed documents. Are you sure?")) return;
+
+    try{
+      const res = await fetch(`${API_BASE}/index`, {
+        method: "DELETE",
+        headers: {"Authorization": `Bearer ${token}`},
+      });
+      if (res.ok){
+        appendMessage("agent", "Document index cleared. Upload a new PDF to continue.", []);
+        checkHealth();
+      }
+      else{
+        showError("Failed to reset index.");
+      }
+    }
+    catch{
+      showError("Network error restting index.");
+    }
   }
 
   // ── UI Helpers ───────────────────────────────────────────────────

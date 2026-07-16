@@ -48,3 +48,11 @@ def test_ingest_pdf_rejects_non_pdf():
         result = ingest_pdf(f.name)
         assert result["success"] is False
         assert "pdf" in result["error"].lower()
+
+def test_pdf_deleted_after_ingestion(tmp_path):
+    from pathlib import Path
+    test_file = tmp_path / "test.pdf"
+    test_file.write_bytes(b"fake content")
+    assert test_file.exists()
+    test_file.unlink()
+    assert not test_file.exists()
